@@ -1,0 +1,84 @@
+_schema-version: "3.2"
+ID: Carro
+version: 0.0.1
+modules:
+- name: Carro-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: Carro-destination-service
+    parameters:
+      content-target: true
+  - name: Carro_html_repo_host
+    parameters:
+      service-key:
+        name: Carro_html_repo_host-key
+  - name: uaa_Carro
+    parameters:
+      service-key:
+        name: uaa_Carro-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: Carro_Carro_html_repo_host
+          ServiceInstanceName: Carro-html5-app-host-service
+          ServiceKeyName: Carro_html_repo_host-key
+          sap.cloud.service: Carro
+        - Authentication: OAuth2UserTokenExchange
+          Name: Carro_uaa_Carro
+          ServiceInstanceName: Carro-xsuaa-service
+          ServiceKeyName: uaa_Carro-key
+          sap.cloud.service: Carro
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: Carro_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: Carro_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - Carro-content.zip
+      name: Carro
+      target-path: resources/
+- name: Carro
+  type: html5
+  path: Carro
+  build-parameters:
+    builder: custom
+    commands:
+    - npm run build
+    supported-platforms: []
+resources:
+- name: Carro-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      version: 1.0.0
+    service: destination
+    service-name: Carro-destination-service
+    service-plan: lite
+- name: Carro_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: Carro-html5-app-host-service
+    service-plan: app-host
+- name: uaa_Carro
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: Carro-xsuaa-service
+    service-plan: application
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
